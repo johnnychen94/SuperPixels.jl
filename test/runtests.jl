@@ -1,6 +1,6 @@
-using SuperPixels
+using SuperPixels, ImageCore
 using Test
 
 @testset "SuperPixels.jl" begin
-    # Write your own tests here.
+    include("types.jl")
 end

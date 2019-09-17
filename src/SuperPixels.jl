@@ -1,14 +1,19 @@
 module SuperPixels
 
-using ImageCore
+using ImageCore, ColorVectorSpace
 using ImageCore: GenericImage
 import ColorTypes: color_type, color
+import Base: position
 
 include("types.jl")
+include("synthesize.jl")
 
 export
-    Pixel,
-    SuperPixel,
-    SuperPixelImage
+    # Types
+    Pixel, SuperPixel, SuperPixelImage,
+    # utils
+    color, position, image_size,
+    # algorithms
+    synthesize
 
 end

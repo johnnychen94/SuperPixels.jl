@@ -8,26 +8,30 @@
     end
 
     @testset "SuperPixel" begin
-        img = rand(Gray, 4, 4)
+        for T in (Lab{Float32}, RGB{Float32}, Gray{Float32}, Float32)
+            img = rand(T, 4, 4)
 
-        # Although conceptually, an image is a large super pixel,
-        # it isn't a SuperPixel type
-        @test !(img isa SuperPixel)
-        @test Pixel.(img, CartesianIndices(img)) isa SuperPixel
+            # Although conceptually, an image is a large super pixel,
+            # it isn't a SuperPixel type
+            @test !(img isa SuperPixel)
+            @test Pixel.(img, CartesianIndices(img)) isa SuperPixel
+        end
     end
 
     @testset "SuperPixelImage" begin
-        img = rand(Gray, 4, 4)
-        pixels = Pixel.(img, CartesianIndices(img))
-        SP_1 = pixels[1:3, 1:3]
-        SP_2 = pixels[1:3, 4]
-        SP_3 = pixels[4, 1:2]
-        SP_4 = pixels[4, 3:4]
-        img_sp = [SP_1, SP_2, SP_3, SP_4]
+        for T in (Lab{Float32}, RGB{Float32}, Gray{Float32}, Float32)
+            img = rand(T, 4, 4)
+            pixels = Pixel.(img, CartesianIndices(img))
+            SP_1 = pixels[1:3, 1:3]
+            SP_2 = pixels[1:3, 4]
+            SP_3 = pixels[4, 1:2]
+            SP_4 = pixels[4, 3:4]
+            img_sp = [SP_1, SP_2, SP_3, SP_4]
 
-        # Although conceptually, an image is a large super pixel,
-        # it isn't a SuperPixelImage type
-        @test !(img isa SuperPixelImage)
-        @test img_sp isa SuperPixelImage
+            # Although conceptually, an image is a large super pixel,
+            # it isn't a SuperPixelImage type
+            @test !(img isa SuperPixelImage)
+            @test img_sp isa SuperPixelImage
+        end
     end
 end

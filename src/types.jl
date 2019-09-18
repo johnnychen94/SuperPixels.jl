@@ -14,21 +14,8 @@ struct Pixel{CT<:Colorant} <: AbstractPixel
 end
 Pixel(gray::Number, pos) = Pixel(Gray(gray), pos)
 Pixel(color::Colorant, pos::Tuple) = Pixel(color, CartesianIndex(pos))
-color_type(::Type{Pixel{CT}}) where CT<:Colorant = CT
-color_type(p::Pixel) = color_type(typeof(p))
 
-
-"""
-    color(p::Pixel)
-
-Extracts the color information of a [`Pixel`](@ref).
-"""
 color(p::Pixel) = p.color
-"""
-    position(p::Pixel)
-
-Extracts the position information of a [`Pixel`](@ref).
-"""
 position(p::Pixel) = p.pos
 
 """
@@ -39,8 +26,20 @@ both color and spatial information.
 """
 const SuperPixel{T<:AbstractPixel, N} = AbstractArray{T, N}
 
+"""
+    SuperPixelImage{T<:SuperPixel, N} = AbstractArray{T, N}
+
+A super pixel image is a collection of super pixels [`SuperPixel`](@ref).
+"""
+const SuperPixelImage{T<:SuperPixel, N} = AbstractArray{T, N}
+
+PixelCollection = Union{SuperPixel, SuperPixelImage}
+
+color_type(sp::Union{Pixel, PixelCollection}) = color_type(typeof(sp))
+color_type(::Type{Pixel{CT}}) where CT<:Colorant = CT
 color_type(::Type{T}) where T <: SuperPixel = color_type(eltype(T))
-color_type(sp::SuperPixel) = color_type(typeof(sp))
+color_type(::Type{T}) where T<:SuperPixelImage = color_type(eltype(T))
+
 
 # see issue: https://github.com/JuliaLang/julia/issues/33274
 function Base.intersect(s::SuperPixel, itrs...)
@@ -52,16 +51,6 @@ function Base.intersect(s::SuperPixel, itrs...)
         return intersect(s[idx], itrs[2:end]...)
     end
 end
-
-"""
-    SuperPixelImage{T<:SuperPixel, N} = AbstractArray{T, N}
-
-A super pixel image is a collection of super pixels [`SuperPixel`](@ref).
-"""
-const SuperPixelImage{T<:SuperPixel, N} = AbstractArray{T, N}
-
-color_type(::Type{T}) where T<:SuperPixelImage = color_type(eltype(T))
-color_type(img::SuperPixelImage) = color_type(typeof(img))
 
 """
     image_size(img)

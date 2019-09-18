@@ -2,6 +2,7 @@ module SuperPixels
 
 using ImageCore, ColorVectorSpace
 using ImageCore: GenericImage
+using Statistics
 import ColorTypes: color_type, color
 import Base: position
 
@@ -14,6 +15,6 @@ export
     # utils
     color, position, image_size,
     # algorithms
-    synthesize
+    synthesize, Raw, Average
 
 end

@@ -32,6 +32,7 @@ function synthesize(::Type{CT}, img::SuperPixelImage, ::Raw) where CT <: Union{A
     out = zeros(CT, image_size(img))
     count = zeros(Int, image_size(img)) # overlap count
     for SP in img
+        isempty(SP) && continue
         R = position.(SP)
         out[R] .+= color.(SP)
         count[R] .+= 1

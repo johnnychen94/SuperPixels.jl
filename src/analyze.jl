@@ -45,10 +45,28 @@ Whether the generated segments are connected or not. The default value is `true`
 [3] EPFL (2018, Oct 24). SLIC Superpixels. Retrieved from https://ivrl.epfl.ch/research-2/research-current/research-superpixels/, Sep 29, 2019.
 """
 struct SLIC <: AbstractAnalyzeAlgorithm
-    n_segments::Int = 100
-    compatness::Float64 = 10.0
-    max_iter::Int = 10
-    enforce_connectivity::Bool = true
+    n_segments::Int
+    compatness::Float64
+    max_iter::Int
+    enforce_connectivity::Bool
+end
+
+function SLIC(; n_segments::Integer = 100,
+                compatness::Real = 10.0,
+                max_iter::Integer = 10,
+                enforce_connectivity::Bool = true)
+    SLIC(n_segments, compatness, max_iter, enforce_connectivity)
+end
+
+function Base.show(io::IO, alg::SLIC)
+    sep = ", "
+    print(io, "SLIC(")
+    foreach(fieldnames(SLIC)) do x
+        name = String(x)
+        value = @eval $alg.$x
+        print(io, name, "=", value, sep)
+    end
+    println(io, repeat("\b", length(sep)), ")")
 end
 
 _slic(alg::SLIC, img::AbstractArray{<:Number, 2}) = eltype(img).(_slic(alg, Gray.(img)))
@@ -97,7 +115,7 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
             y_min = floor(Int, max(cy - 2S, 1))
             y_max = ceil(Int, min(cy + 2S, width))
 
-            # break distance computation into nested for-loop to use reuse `dy`
+            # break distance computation into nested for-loop to reuse `dy`
             for y in y_min:y_max
                 dy = abs2(cy - y)
                 for x in x_min:x_max

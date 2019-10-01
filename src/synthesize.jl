@@ -34,8 +34,8 @@ function synthesize(::Type{CT},
                     img::AbstractArray{<:SuperPixel},
                     ::Raw) where CT <: Union{AbstractRGB, AbstractGray}
 
-    out = zeros(CT, image_size(img))
-    count = zeros(Int, image_size(img)) # overlap count
+    out = zeros(CT, imsize(img))
+    count = zeros(Int, imsize(img)) # overlap count
     for SP in img
         isempty(SP) && continue
         R = position(SP)

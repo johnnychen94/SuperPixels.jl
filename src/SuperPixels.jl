@@ -11,7 +11,7 @@ include("synthesize.jl")
 export
     SuperPixel, color, position,
     # utils
-    image_size,
+    imsize,
     # algorithms
     synthesize, Raw, Average
 

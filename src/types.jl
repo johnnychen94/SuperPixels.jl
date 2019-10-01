@@ -90,13 +90,13 @@ color_type(img::AbstractArray{<:SuperPixel}) = color_type(eltype(img))
 color_type(::Type{<:SuperPixel{CT}}) where CT <: Colorant = CT
 
 """
-    image_size(img)
+    imsize(img)
 
 Returns the size of potential image represented by [`SuperPixel`](@ref).
 """
-image_size(img::AbstractArray{<:SuperPixel}) = _size(Iterators.flatten(position.(img)))
-image_size(img::SuperPixel) = _size(position(img))
-image_size(img::AbstractArray) = size(img)
+imsize(img::AbstractArray{<:SuperPixel}) = _size(Iterators.flatten(position.(img)))
+imsize(img::SuperPixel) = _size(position(img))
+imsize(img::AbstractArray) = size(img)
 function _size(R)
     I_first, I_last = extrema(R)
     return I_last.I .- I_first.I .+ (1, 1)

@@ -1,37 +1,42 @@
-@testset "Types" begin
-    @testset "Pixel" begin
-        p = Pixel(Gray(0), (1, 1))
-
-        @test_throws MethodError Pixel(rand(Gray))
-        @test p == Pixel(Gray(0), CartesianIndex(1, 1))
-        @test p == Pixel(0, (1, 1))
-    end
-
+@testset "Type" begin
     @testset "SuperPixel" begin
         for T in (Lab{Float32}, RGB{Float32}, Gray{Float32}, Float32)
             img = rand(T, 4, 4)
 
-            # Although conceptually, an image is a large super pixel,
-            # it isn't a SuperPixel type
-            @test !(img isa SuperPixel)
-            @test Pixel.(img, CartesianIndices(img)) isa SuperPixel
+            pos = (1:2, 3:4)
+            sp1 = SuperPixel(img, pos)
+            sp2 = SuperPixel(img[pos...], pos)
+
+            pos = CartesianIndices(pos)
+            sp3 = SuperPixel(img, pos)
+            sp4 = SuperPixel(img[pos], pos)
+
+            @test eltype(sp1.color) <: Colorant # Number is promoted to Gray
+            @test size(sp1.color) == size(sp1.position)
+            @test sp1.color == img[sp1.position] # relative order is perserved
+            @test sp2 == sp1
+            @test sp3 == sp1
+            @test sp4 == sp1
+
+            @test color(sp1) == sp1.color
+            @test position(sp1) == sp1.position
+
+            @test isempty(sp1) == isempty(sp1.color)
+            @test imsize(sp1) == size(pos)
+            @test color_type(sp1) == (T <: Number ? Gray{T} : T)
         end
     end
 
-    @testset "SuperPixelImage" begin
+    @testset "SuperPixel image" begin
         for T in (Lab{Float32}, RGB{Float32}, Gray{Float32}, Float32)
             img = rand(T, 4, 4)
-            pixels = Pixel.(img, CartesianIndices(img))
-            SP_1 = pixels[1:3, 1:3]
-            SP_2 = pixels[1:3, 4]
-            SP_3 = pixels[4, 1:2]
-            SP_4 = pixels[4, 3:4]
-            img_sp = [SP_1, SP_2, SP_3, SP_4]
+            img_sp = [SuperPixel(img, (1:2, 1:2)),
+                      SuperPixel(img, (1:2, 3:4)),
+                      SuperPixel(img, (3:4, 1:2)),
+                      SuperPixel(img, (3:4, 3:4))]
 
-            # Although conceptually, an image is a large super pixel,
-            # it isn't a SuperPixelImage type
-            @test !(img isa SuperPixelImage)
-            @test img_sp isa SuperPixelImage
+            @test imsize(img_sp) == size(img)
+            @test color_type(img_sp) == (T <: Number ? Gray{T} : T)
         end
     end
 end

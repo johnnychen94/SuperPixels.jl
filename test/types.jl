@@ -10,6 +10,7 @@
             pos = CartesianIndices(pos)
             sp3 = SuperPixel(img, pos)
             sp4 = SuperPixel(img[pos], pos)
+            @test_nowarn SuperPixel(img, pos[:])
 
             @test eltype(sp1.color) <: Colorant # Number is promoted to Gray
             @test size(sp1.color) == size(sp1.position)

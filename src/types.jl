@@ -56,21 +56,16 @@ synthesize(img_sp, Average()) # each superpixel is averaged first
 """
 struct SuperPixel{T<:Colorant, N, AT<:AbstractArray{T}}
     color::AT
-    position::CartesianIndices{N}
-
-    function SuperPixel{T, N, AT}(
-            color::AT,
-            position::CartesianIndices{N}) where {
-                T<:Colorant, N,
-                AT<:AbstractArray{T}}
-        color = length(color) == length(position) ? color : color[position]
-        new(color, position)
-    end
+    position
 end
 
-SuperPixel(color::AT, position::CartesianIndices{N}) where {
-        T<:Colorant, N, AT<:AbstractArray{T}} =
-    SuperPixel{T, N, AT}(color, position)
+function SuperPixel(
+    color::AbstractArray{T},
+    position::AbstractArray{CartesianIndex{N}}) where {T<:Colorant, N}
+
+    color = length(color) == length(position) ? color : color[position]
+    SuperPixel{T, N, typeof(color)}(color, position)
+end
 
 SuperPixel(color::AbstractArray{<:Colorant}, pos::Tuple) =
     SuperPixel(color, CartesianIndices(pos))

@@ -76,6 +76,16 @@ SuperPixel(pixels::AbstractArray{<:Number}, pos) =
 color(sp::SuperPixel) = sp.color
 position(sp::SuperPixel) = sp.position
 
+# support usage such as RGB.(img_sp)
+function Base.convert(::Type{C}, sp::SuperPixel) where {C<:Colorant}
+    CT = ccolor(C, eltype(sp.color))
+    src = sp.color
+    dest = similar(src, CT)
+    @inbounds for idx in CartesianIndices(src)
+        dest[idx] = ColorTypes.cconvert(ccolor(C, CT), src[idx])
+    end
+    return SuperPixel(dest, sp.position)
+end
 
 Base.isempty(sp::SuperPixel) = isempty(color(sp))
 Base.:(==)(x::SuperPixel, y::SuperPixel) = x.position == y.position && x.color == y.color

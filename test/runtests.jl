@@ -1,4 +1,4 @@
-using ImageCore
+using ImageCore, Images
 using Test, Suppressor
 
 refambs = @suppress_out detect_ambiguities(ImageCore, Base)
@@ -11,6 +11,7 @@ ambs = @suppress_out detect_ambiguities(ImageCore, Base, SuperPixels)
 
     include("types.jl")
     include("synthesize.jl")
+    include("analyze.jl")
 end
 
 nothing

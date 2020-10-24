@@ -1,3 +1,5 @@
+using DelimitedFiles
+
 abstract type AbstractAnalyzeAlgorithm end
 
 analyze(alg::AbstractAnalyzeAlgorithm, img, args...; kwargs...) = alg(img, args...; kwargs...)
@@ -162,8 +164,8 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
     if alg.enforce_connectivity
         println("zergling")
         segment_size = height * width / n_segments
-        min_size = 0.5 * segment_size
-        max_size = 3.0 * segment_size
+        min_size = round(Int, 0.5 * segment_size)
+        max_size = round(Int, 3.0 * segment_size)
 
         dy = [1, -1, 0, 0]
         dx = [0, 0, 1, -1]
@@ -185,7 +187,7 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
         for x = 1:width
             for y = 1:height
                 if nearest_segments[y, x] == mask_label continue end
-                if [y, x] > mask_label continue end
+                if nearest_segments_final[y, x] > mask_label continue end
 
                 adjacent = 0
                 label = nearest_segments[y, x]
@@ -197,7 +199,7 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
 
                 # Preform BFS to find the size of superpixel with 
                 # same lable number
-                while bfs_visited < current_segment_size < max_size
+                while bfs_visited < current_segment_size <= max_size
                     for i = 1:4
                         yy = coord_list[bfs_visited + 1, 1] + dy[i]
                         xx = coord_list[bfs_visited + 1, 2] + dx[i]
@@ -205,11 +207,11 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
                         if 1 <= yy <= height &&  1 <= xx <= width
                             if nearest_segments[yy, xx] == label && nearest_segments_final[yy, xx] == mask_label
                                 nearest_segments_final[yy, xx] = current_new_label
-                                coord_list[current_segment_size, 1] = yy # <-- index problem in the future
-                                coord_list[current_segment_size, 2] = xx # <-- index problem in the future
+                                coord_list[current_segment_size + 1, 1] = yy # <-- index problem in the future
+                                coord_list[current_segment_size + 1, 2] = xx # <-- index problem in the future
                                 current_segment_size += 1
                                 
-                                if current_segment_size >= max_size break end
+                                if current_segment_size > max_size break end
                             elseif nearest_segments_final[yy, xx] > mask_label &&
                                    nearest_segments_final[yy, xx] != current_new_label
                                 adjacent = nearest_segments_final[yy, xx]
@@ -225,7 +227,7 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
                 # merge the superpixel to its neighbor if it is too small
                 if current_segment_size < min_size
                     for i = 1:current_segment_size
-                        #println(i, " ", coord_list[i, 1])
+                        println(i, " ", coord_list[i, 1])
                         nearest_segments_final[coord_list[i, 1],
                                      coord_list[i, 2]] = adjacent
                     end
@@ -236,6 +238,11 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
         end
         nearest_segments = copy(nearest_segments_final)
     end
+
+
+    #open("superpixels_100_10_compat.txt", "w") do io
+    #    writedlm(io, nearest_segments,' ')
+    #end
 
     sp_img = map(1:n_segments) do i
         SuperPixel(img, findall(nearest_segments .== i))

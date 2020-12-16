@@ -162,7 +162,7 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
     # Enforce connectivity
     # Reference: https://github.com/scikit-image/scikit-image/blob/7e4840bd9439d1dfb6beaf549998452c99f97fdd/skimage/segmentation/_slic.pyx#L240-L348
     if alg.enforce_connectivity
-        println("zergling")
+
         segment_size = height * width / n_segments
         min_size = round(Int, 0.5 * segment_size)
         max_size = round(Int, 3.0 * segment_size)
@@ -186,8 +186,8 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
  
         for x = 1:width
             for y = 1:height
-                if nearest_segments[y, x] == mask_label continue end
-                if nearest_segments_final[y, x] > mask_label continue end
+                nearest_segments[y, x] == mask_label && continue
+                nearest_segments_final[y, x] > mask_label && continue
 
                 adjacent = 0
                 label = nearest_segments[y, x]
@@ -226,8 +226,8 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
 
                 # merge the superpixel to its neighbor if it is too small
                 if current_segment_size < min_size
-                    for i = 1:current_segment_size
-                        println(i, " ", coord_list[i, 1])
+                    @inbound @simd for i = 1:current_segment_size
+
                         nearest_segments_final[coord_list[i, 1],
                                      coord_list[i, 2]] = adjacent
                     end
@@ -236,13 +236,14 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
                 end
             end
         end
-        nearest_segments = copy(nearest_segments_final)
+        #nearest_segments = copy(nearest_segments_final)
+        nearest_segments = nearest_segments_final
     end
 
 
-    #open("superpixels_100_10_compat.txt", "w") do io
-    #    writedlm(io, nearest_segments,' ')
-    #end
+    open("superpixels_100_10_compat.txt", "w") do io
+        writedlm(io, nearest_segments,' ')
+    end
 
     sp_img = map(1:n_segments) do i
         SuperPixel(img, findall(nearest_segments .== i))

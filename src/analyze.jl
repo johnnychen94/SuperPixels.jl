@@ -226,7 +226,7 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
 
                 # merge the superpixel to its neighbor if it is too small
                 if current_segment_size < min_size
-                    @inbound @simd for i = 1:current_segment_size
+                    @inbounds @simd for i = 1:current_segment_size
 
                         nearest_segments_final[coord_list[i, 1],
                                      coord_list[i, 2]] = adjacent

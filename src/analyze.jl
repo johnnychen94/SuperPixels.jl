@@ -226,7 +226,7 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
 
                 # merge the superpixel to its neighbor if it is too small
                 if current_segment_size < min_size
-                    @inbounds @simd for i = 1:current_segment_size
+                    for i = 1:current_segment_size
 
                         nearest_segments_final[coord_list[i, 1],
                                      coord_list[i, 2]] = adjacent
@@ -241,9 +241,9 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
     end
 
 
-    open("superpixels_100_10_compat.txt", "w") do io
-        writedlm(io, nearest_segments,' ')
-    end
+    #open("superpixels_100_10_compat.txt", "w") do io
+    #    writedlm(io, nearest_segments,' ')
+    #end
 
     sp_img = map(1:n_segments) do i
         SuperPixel(img, findall(nearest_segments .== i))

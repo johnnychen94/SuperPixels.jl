@@ -2,6 +2,7 @@ using ImageCore, Images
 using Test, Suppressor
 
 using DelimitedFiles
+using BenchmarkTools
 
 refambs = @suppress_out detect_ambiguities(ImageCore, Base)
 using SuperPixels

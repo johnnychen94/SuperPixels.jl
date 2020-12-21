@@ -15,6 +15,6 @@ export
     imsize,
     # algorithms
     synthesize, Raw, Average,
-    analyze, SLIC
+    analyze, SLIC, _slic
 
 end

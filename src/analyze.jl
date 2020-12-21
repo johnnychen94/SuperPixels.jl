@@ -1,3 +1,5 @@
+using DelimitedFiles
+
 abstract type AbstractAnalyzeAlgorithm end
 
 analyze(alg::AbstractAnalyzeAlgorithm, img, args...; kwargs...) = alg(img, args...; kwargs...)
@@ -157,9 +159,91 @@ function _slic(alg::SLIC, img::AbstractArray{<:Lab, 2})
         segments ./= n_segment_elems # broadcast: (n_segments,) -> (n_segments, 5)
     end
 
+    # Enforce connectivity
+    # Reference: https://github.com/scikit-image/scikit-image/blob/7e4840bd9439d1dfb6beaf549998452c99f97fdd/skimage/segmentation/_slic.pyx#L240-L348
     if alg.enforce_connectivity
-        nothing # TODO
+
+        segment_size = height * width / n_segments
+        min_size = round(Int, 0.5 * segment_size)
+        max_size = round(Int, 3.0 * segment_size)
+
+        dy = [1, -1, 0, 0]
+        dx = [0, 0, 1, -1]
+        # dz = [] # reversed for supervoxels
+
+        start_label = 1
+        mask_label = start_label - 1 # indicates the label of this pixel has not been assigned
+        nearest_segments_final = fill(mask_label, height, width)
+        current_new_label = start_label
+
+        # used for BFS
+        current_segment_size = 1
+        bfs_visited = 0
+
+        # store neighboring pixels
+        # now set the dimension to 2 because we are using superpixel
+        coord_list = fill(0, max_size, 2)
+ 
+        for x = 1:width
+            for y = 1:height
+                nearest_segments[y, x] == mask_label && continue
+                nearest_segments_final[y, x] > mask_label && continue
+
+                adjacent = 0
+                label = nearest_segments[y, x]
+                nearest_segments_final[y, x] = current_new_label
+                current_segment_size = 1
+                bfs_visited = 0
+                coord_list[bfs_visited + 1, 1] = y
+                coord_list[bfs_visited + 1, 2] = x
+
+                # Preform BFS to find the size of superpixel with 
+                # same lable number
+                while bfs_visited < current_segment_size <= max_size
+                    for i = 1:4
+                        yy = coord_list[bfs_visited + 1, 1] + dy[i]
+                        xx = coord_list[bfs_visited + 1, 2] + dx[i]
+
+                        if 1 <= yy <= height &&  1 <= xx <= width
+                            if nearest_segments[yy, xx] == label && nearest_segments_final[yy, xx] == mask_label
+                                nearest_segments_final[yy, xx] = current_new_label
+                                coord_list[current_segment_size + 1, 1] = yy # <-- index problem in the future
+                                coord_list[current_segment_size + 1, 2] = xx # <-- index problem in the future
+                                current_segment_size += 1
+                                
+                                if current_segment_size > max_size break end
+                            elseif nearest_segments_final[yy, xx] > mask_label &&
+                                   nearest_segments_final[yy, xx] != current_new_label
+                                adjacent = nearest_segments_final[yy, xx]
+                            end
+                        end
+                    end
+                    bfs_visited += 1
+                end
+
+                #for i = 1:current_segment_size println(coord_list[i, 1]) end
+                #println(max_size, " ", current_segment_size)
+
+                # merge the superpixel to its neighbor if it is too small
+                if current_segment_size < min_size
+                    for i = 1:current_segment_size
+
+                        nearest_segments_final[coord_list[i, 1],
+                                     coord_list[i, 2]] = adjacent
+                    end
+                else
+                    current_new_label += 1
+                end
+            end
+        end
+        #nearest_segments = copy(nearest_segments_final)
+        nearest_segments = nearest_segments_final
     end
+
+
+    #open("superpixels_100_10_compat.txt", "w") do io
+    #    writedlm(io, nearest_segments,' ')
+    #end
 
     sp_img = map(1:n_segments) do i
         SuperPixel(img, findall(nearest_segments .== i))

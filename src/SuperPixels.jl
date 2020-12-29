@@ -7,12 +7,14 @@ import Base: position
 
 include("types.jl")
 include("synthesize.jl")
+include("analyze.jl")
 
 export
     SuperPixel, color, position,
     # utils
     imsize,
     # algorithms
-    synthesize, Raw, Average
+    synthesize, Raw, Average,
+    analyze, SLIC, _slic
 
 end

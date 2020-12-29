@@ -1,17 +1,15 @@
 module SuperPixels
 
-using ImageCore, ColorVectorSpace
+using Base: tail
 using Statistics
-import ColorTypes: color_type, color
-import Base: position
+using FillArrays
+using ImageCore, ColorVectorSpace
 
 include("types.jl")
 include("synthesize.jl")
 
 export
-    SuperPixel, color, position,
-    # utils
-    imsize,
+    SuperPixel,
     # algorithms
     synthesize, Raw, Average
 

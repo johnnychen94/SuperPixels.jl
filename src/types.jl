@@ -6,17 +6,11 @@ A super pixel is a collection of pixels with their position information.
 
 # Fields
 
-* `color::AbstractArray{<:Colorant}` stores its pixel/color information.
-* `position::CartesianIndices` stores its position information.
+* `values::AbstractArray{<:Colorant}` stores its pixel/color information.
+* `indices::CartesianIndices` stores its position information.
 
-Relative order in `color` and `position` is important; `color[idx]` is the
-image pixel at position `position[idx]`.
-
-!!! tip
-
-    There's a helper for each field. For example, `color(sp)` is equivalent to
-    `sp.color`. This is useful to enable broadcasting such as `position.(img)`
-    where `img` is a `SuperPixel` array.
+Relative order in `values` and `indices` is important; `values[idx]` is the
+image pixel at position `indices[idx]`.
 
 # Examples
 
@@ -54,55 +48,32 @@ synthesize(img_sp) # composite superpixels into a complete image
 synthesize(img_sp, Average()) # each superpixel is averaged first
 ```
 """
-struct SuperPixel{T<:Colorant, N, AT<:AbstractArray{T}}
-    color::AT
-    position
-end
+struct SuperPixel{C, N, AT<:AbstractArray{C, N}, R} <: AbstractArray{C, N}
+    values::AT
+    indices::R
 
-function SuperPixel(
-    color::AbstractArray{T},
-    position::AbstractArray{CartesianIndex{N}}) where {T<:Colorant, N}
-
-    color = length(color) == length(position) ? color : color[position]
-    SuperPixel{T, N, typeof(color)}(color, position)
-end
-
-SuperPixel(color::AbstractArray{<:Colorant}, pos::Tuple) =
-    SuperPixel(color, CartesianIndices(pos))
-
-SuperPixel(pixels::AbstractArray{<:Number}, pos) =
-    SuperPixel(Gray.(pixels), pos)
-
-color(sp::SuperPixel) = sp.color
-position(sp::SuperPixel) = sp.position
-
-# support usage such as RGB.(img_sp)
-function Base.convert(::Type{C}, sp::SuperPixel) where {C<:Colorant}
-    CT = ccolor(C, eltype(sp.color))
-    src = sp.color
-    dest = similar(src, CT)
-    @inbounds for idx in CartesianIndices(src)
-        dest[idx] = ColorTypes.cconvert(ccolor(C, CT), src[idx])
+    axes::NTuple{N, UnitRange{Int}}
+    function SuperPixel(values::AbstractArray{C, N}, indices) where {C, N}
+        new{C, N, typeof(values), typeof(indices)}(values, indices, _sp_axes(indices))
     end
-    return SuperPixel(dest, sp.position)
 end
 
-Base.isempty(sp::SuperPixel) = isempty(color(sp))
-Base.:(==)(x::SuperPixel, y::SuperPixel) = x.position == y.position && x.color == y.color
+@inline _sp_axes(indices::CartesianIndices) = indices.indices
+@inline _sp_axes(indices::Tuple) = indices
+@inline function _sp_axes(indices::AbstractArray)
+    N = length(view(indices, 1))
+    ntuple(N) do i
+        r = ntuple(length(indices)) do j
+            @inbounds indices[j][i]
+        end
+        UnitRange(extrema(r)...)
+    end
+end
 
-color_type(sp::SuperPixel{CT}) where CT <: Colorant = CT
-color_type(img::AbstractArray{<:SuperPixel}) = color_type(eltype(img))
-color_type(::Type{<:SuperPixel{CT}}) where CT <: Colorant = CT
+Base.axes(sp::SuperPixel) = sp.axes
+Base.size(sp::SuperPixel) = length.(axes(sp))
 
-"""
-    imsize(img)
-
-Returns the size of potential image represented by [`SuperPixel`](@ref).
-"""
-imsize(img::AbstractArray{<:SuperPixel}) = _size(Iterators.flatten(position.(img)))
-imsize(img::SuperPixel) = _size(position(img))
-imsize(img::AbstractArray) = size(img)
-function _size(R)
-    I_first, I_last = extrema(R)
-    return I_last.I .- I_first.I .+ (1, 1)
+Base.@propagate_inbounds function Base.getindex(sp::SuperPixel, ind...)
+    # TODO: check whether ind ∈ sp.indices
+    getindex(sp.values, ind...)
 end
